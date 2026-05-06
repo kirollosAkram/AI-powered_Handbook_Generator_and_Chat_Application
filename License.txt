@@ -1,0 +1,9 @@
+
+This README provides:
+1. Clear prerequisites for running the application
+2. Step-by-step installation instructions
+3. Explicit mention of the required Ollama models
+4. Usage instructions for both features
+5. Troubleshooting guidance
+
+The requirements.txt file includes all necessary Python packages with minimum version requirements to ensure compatibility.
