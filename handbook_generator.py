@@ -51,7 +51,7 @@ def get_model() -> ChatOllama:
 # Retrieval
 # ─────────────────────────────────────────────────────────────────────────────
 
-def retrieve_knowledge(topic, k=20):
+def retrieve_knowledge(topic, k=DEFAULT_CHUNK_K):
     """Return the top-k most relevant document chunks for *topic*."""
     db = get_db(CHROMA_HANDBOOK)
     results = db.similarity_search(topic, k=k)
