@@ -28,8 +28,7 @@ def get_text_splitter() -> RecursiveCharacterTextSplitter:
     )
 
 
-@lru_cache(maxsize=1)                   # ← NEW: one persistent DB connection
-@st.cache_resource
+@lru_cache(maxsize=2) 
 def get_db(chroma_path: str) -> Chroma:
     return Chroma(
         persist_directory=chroma_path,
@@ -40,8 +39,9 @@ def get_db(chroma_path: str) -> Chroma:
 # ─────────────────────────────────────────────────────────────────────────────
 # Call this after reset_database() so the cached DB handle is discarded
 # ─────────────────────────────────────────────────────────────────────────────
-def invalidate_db_cache(chroma_path: str) -> None:
-    get_db(chroma_path).cache_clear()
+def invalidate_db_cache() -> None:
+    get_db.cache_clear()          # clears @lru_cache
+    st.cache_resource.clear()     # clears @st.cache_resource
 
 
 # ─────────────────────────────────────────────────────────────────────────────

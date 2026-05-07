@@ -83,7 +83,7 @@ with col2:
     if new_handbook:
         try:
             reset_handbook_db()
-            invalidate_db_cache(chroma_path=CHROMA_HANDBOOK)
+            invalidate_db_cache()
         except Exception as e:
             st.warning(f"Reset issue: {e}")
 

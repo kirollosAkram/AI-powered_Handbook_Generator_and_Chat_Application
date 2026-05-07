@@ -129,5 +129,5 @@ with st.sidebar:
     
     if st.button("♻️ Reset Knowledge Base"):
      reset_chat_db()
-     invalidate_db_cache(chroma_path=CHROMA_CHAT)
+     invalidate_db_cache()
     
