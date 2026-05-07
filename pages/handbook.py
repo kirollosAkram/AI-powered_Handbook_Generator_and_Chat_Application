@@ -2,7 +2,7 @@ import streamlit as st
 from handbook_export import get_history, save_handbook_as_pdf, save_history_entry
 from handbook_generator import compile_handbook, generate_handbook_stream, parse_plan_lines
 from chroma_manager import reset_handbook_db
-from rag_pipeline import process_documents, invalidate_db_cache
+from rag_pipeline import process_documents, invalidate_db_cache, CHROMA_HANDBOOK
 
 st.markdown(
     "<style>[data-testid='stSidebarNav'] { display: none; }</style>",
@@ -35,7 +35,7 @@ with st.sidebar:
     )
     if uploaded_files:
         with st.spinner("Processing documents…"):
-            process_documents(uploaded_files)
+            process_documents(uploaded_files, chroma_path=CHROMA_HANDBOOK)
         st.success(f"{len(uploaded_files)} file(s) indexed.")
 
     st.divider()
@@ -83,7 +83,7 @@ with col2:
     if new_handbook:
         try:
             reset_handbook_db()
-            invalidate_db_cache()
+            invalidate_db_cache(chroma_path=CHROMA_HANDBOOK)
         except Exception as e:
             st.warning(f"Reset issue: {e}")
 
@@ -94,7 +94,7 @@ with col2:
 
 if st.button("Generate Handbook", type="primary"):
     if not topic:
-        st.warning("Please enter a topic first.")   # ← validation moved here
+        st.warning("Please enter a topic first.")  
     else:
         reset_handbook_db()
 
@@ -112,8 +112,6 @@ if st.button("Generate Handbook", type="primary"):
                 if event["type"] == "plan":
                     writing_plan = event["writing_plan"]
                     total        = event["total"]
-                    # FIX: plan_lines is now a list[dict] from parse_plan_lines(),
-                    #      not a list[str], so compile_handbook receives the right type.
                     plan_lines   = parse_plan_lines(writing_plan)
                     progress_bar.progress(0, text=f"Writing 0 / {total} sections…")
 
@@ -126,7 +124,7 @@ if st.button("Generate Handbook", type="primary"):
                         f"### Progress: {len(sections)}/{total} sections\n\n"
                         + "\n\n---\n\n".join(sections)
                     )
-                    # 3. FIX: Only finalize when ALL sections have been generated
+                    
                     if len(sections) == total:
                         progress_bar.progress(100, text="Finalising…")
                         

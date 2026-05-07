@@ -5,15 +5,8 @@ from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_chroma import Chroma
 from pdf_processor import extract_text_from_pdf
 
-CHROMA_PATH = "chroma_chat"
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SINGLETONS  (created once, reused forever — like moving work outside a loop)
-#
-# BEFORE: get_embedding_function() built a new OllamaEmbeddings object on
-#         every call → O(init_cost) × number_of_calls
-# AFTER:  @lru_cache ensures it is built exactly once → O(init_cost) × 1
-# ─────────────────────────────────────────────────────────────────────────────
+CHROMA_CHAT     = "chroma_chat"
+CHROMA_HANDBOOK = "chroma_handbook"
 
 @lru_cache(maxsize=1)
 def get_model() -> ChatOllama:
@@ -37,16 +30,9 @@ def get_text_splitter() -> RecursiveCharacterTextSplitter:
 
 @lru_cache(maxsize=1)                   # ← NEW: one persistent DB connection
 @st.cache_resource
-def get_chat_db() -> Chroma:
-    """
-    Open the Chroma vector store once and reuse the connection.
-
-    BEFORE: Chroma(...) was instantiated inside add_to_chroma() AND
-            chat_stream() — a fresh (expensive) connection on every call.
-    AFTER:  one connection, shared across all operations → O(1) overhead.
-    """
+def get_db(chroma_path: str) -> Chroma:
     return Chroma(
-        persist_directory=CHROMA_PATH,
+        persist_directory=chroma_path,
         embedding_function=get_embedding_function(),
     )
 
@@ -54,8 +40,8 @@ def get_chat_db() -> Chroma:
 # ─────────────────────────────────────────────────────────────────────────────
 # Call this after reset_database() so the cached DB handle is discarded
 # ─────────────────────────────────────────────────────────────────────────────
-def invalidate_db_cache() -> None:
-    get_chat_db.cache_clear()
+def invalidate_db_cache(chroma_path: str) -> None:
+    get_db(chroma_path).cache_clear()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,8 +81,8 @@ def calculate_chunk_ids(chunks):
 # Store in Chroma
 # ─────────────────────────────────────────────────────────────────────────────
 
-def add_to_chroma(chunks):
-    db = get_chat_db()                # O(1) — reuses cached connection
+def add_to_chroma(chunks, chroma_path: str):
+    db = get_db(chroma_path)                # O(1) — reuses cached connection
 
     existing_items = db.get(include=[])
     existing_ids   = set(existing_items["ids"])  # set → O(1) lookups below
@@ -118,7 +104,7 @@ def add_to_chroma(chunks):
 # Process uploaded PDFs
 # ─────────────────────────────────────────────────────────────────────────────
 
-def process_documents(uploaded_files):
+def process_documents(uploaded_files, chroma_path: str):
     all_docs = []
 
     for file in uploaded_files:
@@ -126,15 +112,15 @@ def process_documents(uploaded_files):
         all_docs.extend(docs)
 
     chunks = split_documents(all_docs)
-    add_to_chroma(chunks)
+    add_to_chroma(chunks, chroma_path)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Chat (RAG query)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def chat_stream(query: str):
-    db = get_chat_db()                # O(1) — reuses cached connection
+def chat_stream(query: str, chroma_path: str = CHROMA_CHAT):
+    db = get_db(chroma_path)                # O(1) — reuses cached connection
                                         # BEFORE: new Chroma(...) every query
 
     results = db.similarity_search_with_score(query, k=5)

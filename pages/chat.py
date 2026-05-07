@@ -1,5 +1,5 @@
 import streamlit as st
-from rag_pipeline import process_documents, chat_stream, invalidate_db_cache
+from rag_pipeline import process_documents, chat_stream, invalidate_db_cache, CHROMA_CHAT
 from chroma_manager import reset_chat_db
 import gc
 import time
@@ -101,7 +101,7 @@ with st.sidebar:
         )
         if current_signature != st.session_state.last_uploaded_signature:
             with st.spinner("Processing documents..."):
-                process_documents(uploaded_files)
+                process_documents(uploaded_files, chroma_path=CHROMA_CHAT)
             st.session_state.last_uploaded_signature = current_signature
             st.success("Documents processed!")
         else:
@@ -129,5 +129,5 @@ with st.sidebar:
     
     if st.button("♻️ Reset Knowledge Base"):
      reset_chat_db()
-     invalidate_db_cache()
+     invalidate_db_cache(chroma_path=CHROMA_CHAT)
     

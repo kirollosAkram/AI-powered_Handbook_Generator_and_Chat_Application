@@ -15,15 +15,12 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 from typing import Generator, Iterator
-
-from langchain_chroma import Chroma
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_ollama import ChatOllama
+from rag_pipeline import get_db, CHROMA_HANDBOOK
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
-
-CHROMA_PATH      = "chroma_handbook"
 EMBED_MODEL      = "nomic-embed-text"
 CHAT_MODEL       = "phi3"
 DEFAULT_CHUNK_K  = 20
@@ -50,33 +47,13 @@ def get_model() -> ChatOllama:
     return ChatOllama(model=CHAT_MODEL, streaming=True)
 
 
-@lru_cache(maxsize=1)
-def get_embedding_function() -> OllamaEmbeddings:
-    return OllamaEmbeddings(model=EMBED_MODEL)
-
-
-def get_handbook_db() -> Chroma:
-    """
-    Return a fresh Chroma client on every call.
-
-    FIX: This must NOT be @lru_cache'd. The Streamlit page calls
-    reset_handbook_db() before each run, which wipes the underlying
-    directory. A cached stale handle would silently query a deleted
-    or empty collection, producing empty results with no error.
-    """
-    return Chroma(
-        persist_directory=CHROMA_PATH,
-        embedding_function=get_embedding_function(),
-    )
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Retrieval
 # ─────────────────────────────────────────────────────────────────────────────
 
-def retrieve_knowledge(topic: str, k: int = DEFAULT_CHUNK_K) -> list[str]:
+def retrieve_knowledge(topic, k=20):
     """Return the top-k most relevant document chunks for *topic*."""
-    db = get_handbook_db()
+    db = get_db(CHROMA_HANDBOOK)
     results = db.similarity_search(topic, k=k)
     return [doc.page_content for doc in results]
 
