@@ -113,7 +113,6 @@ def stream_section(
     writing_plan: str,
     section_title: str,
     section_point: str,
-    section_index: int,
     last_section: str = "",
 ) -> Iterator[str]:
     """
@@ -276,7 +275,7 @@ def generate_handbook_stream(topic: str) -> Generator[dict, None, None]:
 
       total = len(plan_lines)
 
-    yield {"type": "plan", "total": total, "writing_plan": writing_plan}
+    yield {"type": "plan", "total": total, "writing_plan": writing_plan , "plan_lines": plan_lines}
 
     last_section = ""
     sections: list[str] = []
@@ -289,7 +288,6 @@ def generate_handbook_stream(topic: str) -> Generator[dict, None, None]:
             writing_plan=writing_plan,
             section_title=entry["title"],
             section_point=entry["point"],
-            section_index=i,
             last_section=last_section,
         ):
             section_tokens.append(token)

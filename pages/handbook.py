@@ -1,6 +1,6 @@
 import streamlit as st
 from handbook_export import get_history, save_handbook_as_pdf, save_history_entry
-from handbook_generator import compile_handbook, generate_handbook_stream, parse_plan_lines
+from handbook_generator import compile_handbook, generate_handbook_stream
 from chroma_manager import reset_handbook_db
 from rag_pipeline import process_documents, invalidate_db_cache, CHROMA_HANDBOOK
 
@@ -112,7 +112,7 @@ if st.button("Generate Handbook", type="primary"):
                 if event["type"] == "plan":
                     writing_plan = event["writing_plan"]
                     total        = event["total"]
-                    plan_lines   = parse_plan_lines(writing_plan)
+                    plan_lines = event["plan_lines"]
                     progress_bar.progress(0, text=f"Writing 0 / {total} sections…")
 
                 elif event["type"] == "section_done":
