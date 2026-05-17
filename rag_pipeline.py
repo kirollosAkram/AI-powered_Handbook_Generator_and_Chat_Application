@@ -137,7 +137,7 @@ Question: {query}
 Answer:
 """
 
-    model = get_model()                 # O(1) — cached
+    model = get_model()                
 
     for chunk in model.stream(prompt):
         yield chunk.content
