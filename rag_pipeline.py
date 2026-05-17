@@ -13,12 +13,12 @@ def get_model() -> ChatOllama:
     return ChatOllama(model="phi3")
 
 
-@lru_cache(maxsize=1)                   # ← THE KEY FIX (was missing before)
+@lru_cache(maxsize=1)                   
 def get_embedding_function() -> OllamaEmbeddings:
     return OllamaEmbeddings(model="nomic-embed-text")
 
 
-@lru_cache(maxsize=1)                   # ← NEW: splitter config never changes
+@lru_cache(maxsize=1)                   
 def get_text_splitter() -> RecursiveCharacterTextSplitter:
     return RecursiveCharacterTextSplitter(
         chunk_size=2000,
@@ -49,12 +49,11 @@ def invalidate_db_cache() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def split_documents(documents):
-    # get_text_splitter() is now O(1) — returns the cached instance
     return get_text_splitter().split_documents(documents)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Chunk ID generation  (algorithm unchanged — already O(n), which is optimal)
+# Chunk ID generation  
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calculate_chunk_ids(chunks):
@@ -82,14 +81,13 @@ def calculate_chunk_ids(chunks):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def add_to_chroma(chunks, chroma_path: str):
-    db = get_db(chroma_path)                # O(1) — reuses cached connection
+    db = get_db(chroma_path)              
 
     existing_items = db.get(include=[])
-    existing_ids   = set(existing_items["ids"])  # set → O(1) lookups below
+    existing_ids   = set(existing_items["ids"]) 
 
     chunks = calculate_chunk_ids(chunks)
 
-    # List comprehension with set lookup: O(n) total, not O(n²)
     new_chunks = [
         chunk for chunk in chunks
         if chunk.metadata["id"] not in existing_ids
@@ -120,8 +118,7 @@ def process_documents(uploaded_files, chroma_path: str):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def chat_stream(query: str, chroma_path: str = CHROMA_CHAT):
-    db = get_db(chroma_path)                # O(1) — reuses cached connection
-                                        # BEFORE: new Chroma(...) every query
+    db = get_db(chroma_path)             
 
     results = db.similarity_search_with_score(query, k=5)
 
